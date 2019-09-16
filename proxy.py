@@ -19,23 +19,23 @@ month = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May',
 
 # Dissect HTTP header into line(first line), header(second line to end), body
 def parseHTTP(data):
-	
-	header = {}
-	len = data.find(b'\r\n\r\n')
-	body = data[(len+4):]
+    
+    header = {}
+    len = data.find(b'\r\n\r\n')
+    body = data[(len+4):]
 
-	ind = data.split(b'\r\n')
-	line = ind[0].decode()
-	del ind[0]
-	for l in ind :
-		if l == b'':
-			break
-		tmp = l.split(b": ")
-		header[tmp[0].decode()] = tmp[1].decode()
-	
+    ind = data.split(b'\r\n')
+    line = ind[0].decode()
+    del ind[0]
+    for l in ind :
+        if l == b'':
+            break
+        tmp = l.split(b": ")
+        header[tmp[0].decode()] = tmp[1].decode()
+    
 
 
-	return HTTPPacket(line, header, body)
+    return HTTPPacket(line, header, body)
 
 
 # Receive HTTP packet with socket
@@ -118,12 +118,12 @@ class HTTPPacket:
     # If not exist, add new field
     # If value is empty string, remove field
     def setHeader(self, field, value):
-    	getval = self.header.get(field,"")
-    	if getval:
-    		if value : self.header[field] = value   		
-    		else : 
-    			del self.header[field]
-    	else: self.header[field] = value
+        getval = self.header.get(field,"")
+        if getval:
+            if value : self.header[field] = value           
+            else : 
+                del self.header[field]
+        else: self.header[field] = value
     
     # Get URL from request packet line
     def getURL(self):
@@ -171,65 +171,64 @@ class ProxyThread(threading.Thread):
                 port = 80
                 
                 if req.line.split()[0] == "CONNECT": #if method of message is connect, just print it and detour it
-                	print("[%d] %s" %(self.messageNum,str(current_time)))
-                	print("[%d] > Connection from %s:%d" %(self.messageNum, client_ip,client_port))
-                	print("[%d] > %s" %(self.messageNum,req.line))
-                	self.conn.close()
-                	break #detour connect
+                    print("[%d] %s" %(self.messageNum,str(current_time)))
+                    print("[%d] > Connection from %s:%d" %(self.messageNum, client_ip,client_port))
+                    print("[%d] > %s" %(self.messageNum,req.line))
+                    self.conn.close()
+                    break #detour connect
           
                 # Do I have to do if it is not persistent connection?
     
                 # Remove proxy infomation
                 if req.getHeader('Proxy-Connection'): # if there is Proxy-Connection header, its 
-                	req.setHeader('Proxy-Connection','')
+                    req.setHeader('Proxy-Connection','')
                 if PC : 
-                	req.setHeader('Connection','keep-alive')
+                    req.setHeader('Connection','keep-alive')
                 else :
-                	req.setHeader('Connection', 'close')
+                    req.setHeader('Connection', 'close')
     
                 # Server connect
                 address = (ip,port)
                 index = -1
                 if PC : 
-                	try:                		
-                		server = svrlist.get(address,"")
-                		#for socket reuse                    	
-                		if server == "": # if fisrt use this port , connect
-                			
-               				try:
-               					svr = socket(AF_INET, SOCK_STREAM)
-                				svr.connect(address)
-                				
-                			
-                				 #connect to server               
-                			except:             				
+                    try:
+                        #for socket reuse                       
+                        if not address in svrlist: # if fisrt use this port , connect
+                            print('first!')
+                            try:
+                                svr = socket(AF_INET, SOCK_STREAM)
+                                svr.connect(address)
+                                
+                            
+                                 #connect to server               
+                            except:                             
 
-                				self.conn.close()
-                				#svr.close()
-                				break
+                                self.conn.close()
+                                #svr.close()
+                                break
 
-                			lut = datetime.datetime.now()       
-                			svrlist[address]= [svr,lut]                		
-                			
-                		else : 
-                			lut = datetime.datetime.now()               			               			
-                			svr = server[0]
-                			svrlist[address] = [svr,lut]
-                		
+                            lut = datetime.datetime.now()       
+                            svrlist[address]= [svr,lut]                     
+                            
+                        else : 
+                            lut = datetime.datetime.now()                                                
+                            svr = svrlist[address][0]
+                            svrlist[address] = [svr,lut]
+                        
 
-                	except Exception as e:
-                		break 
+                    except Exception as e:
+                        break 
        
                 
-                	
-                else :	#non pc mode
-                	svr = socket(AF_INET, SOCK_STREAM)                
-                	try:
-                		svr.connect(address) #connect to server               
-                	except:
-                		self.conn.close()
-                		#svr.close()
-                		break		
+                    
+                else :  #non pc mode
+                    svr = socket(AF_INET, SOCK_STREAM)                
+                    try:
+                        svr.connect(address) #connect to server               
+                    except:
+                        self.conn.close()
+                        #svr.close()
+                        break       
                 # and so on...
     
                 # send a client's request to the server
@@ -243,18 +242,18 @@ class ProxyThread(threading.Thread):
                 # Set content length header
                 
                 if res.isChunked() : 
-                	res.setHeader('Content-Length',str(sys.getsizeof(res.body)-33))
+                    res.setHeader('Content-Length',str(sys.getsizeof(res.body)-33))
                   
                 # If support pc, how to do socket and keep-alive?
 
 
                 if PC :
-                	res.setHeader('Connection','keep-alive')
-                else :               	 
-                	res.setHeader('Connection', 'close')
-                	
-                	
-                	
+                    res.setHeader('Connection','keep-alive')
+                else :                   
+                    res.setHeader('Connection', 'close')
+                    
+                    
+                    
                 
                 self.conn.sendall(res.pack()) 
 
@@ -272,21 +271,21 @@ class ProxyThread(threading.Thread):
                 break
 
             except Exception as e:
-            	print(e)
-            	if svr is not None: svr.close() #close server
-            	
-            	
-            	self.conn.close()
-            	
-            	break
+                print(e)
+                if svr is not None: svr.close() #close server
+                
+                
+                self.conn.close()
+                
+                break
             except KeyboardInterrupt:
-            	svr.close()
+                svr.close()
 
-            	
-            	self.conn.close()
-            	sys.exit()
-            	break
-            	
+                
+                self.conn.close()
+                sys.exit()
+                break
+                
 
 
 
@@ -311,17 +310,17 @@ def main():
         sock.listen(20)
         print('Proxy Server started on port %d at %s' % (port ,str(datetime.datetime.now())) )
         if args.mt : 
-        	print("* Multithreading - [ON]")
-        	MT = True
+            print("* Multithreading - [ON]")
+            MT = True
         else : 
-        	print("* Multithreading - [OFF]")
-        	MT = False 
+            print("* Multithreading - [OFF]")
+            MT = False 
         if args.pc : 
-        	print("* Persistent Connection - [ON]")
-        	PC = True
+            print("* Persistent Connection - [ON]")
+            PC = True
         else : 
-        	print("* Persistent Connection - [OFF]")
-        	PC = False
+            print("* Persistent Connection - [OFF]")
+            PC = False
 
         while True:
             # Client connect
@@ -335,27 +334,27 @@ def main():
             messageNum += 1
             #print(svrlist)
             if not args.mt:
-            	pt.join()
+                pt.join()
 
             current = datetime.datetime.now()
             if PC:
-            	for key, value in svrlist.items() :           	
-            		if int((current-value[1]).microseconds) > 100000000:
-            			value[0].close()
-            			del svrlist[key]
+                for key in svrlist :
+                    value = svrlist[key] 
+                    if int((current-value[1]).microseconds) > 100000000:
+                        value[0].close()
+                        del svrlist[key]
 
             #print(svrlist)
-            		
+                    
 
     except Exception as e:
         print(e)
         pass
-    except KeyboardInterrupt:    	
-    	sock.close()
-    	exit()
+    except KeyboardInterrupt:       
+        sock.close()
+        exit()
 
 
 
 if __name__ == '__main__':
     main()
-
